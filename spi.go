@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"unsafe"
 
-	"github.com/ecc1/gpio"
 	"golang.org/x/sys/unix"
 )
 
@@ -17,33 +16,24 @@ type Device struct {
 
 // Open opens the given SPI device at the specified speed (in Hertz)
 // If customCS in not zero, that pin number is used as a custom chip-select.
-func Open(spiDevice string, speed int, customCS int) (*Device, error) {
+func Open(spiDevice string, speed int) (*Device, error) {
 	fd, err := unix.Open(spiDevice, unix.O_RDWR, 0)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %v", spiDevice, err)
 	}
 	var dev *Device
-	if customCS == 0 {
-		// Ensure exclusive access if using default chip-select.
-		err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
-		switch err {
-		case nil:
-			dev = &Device{fd: fd, speed: speed}
-		case unix.EWOULDBLOCK:
-			_ = unix.Close(fd)
-			err = fmt.Errorf("%s: device is in use", spiDevice)
-		default:
-			_ = unix.Close(fd)
-			err = fmt.Errorf("%s: %v", spiDevice, err)
-		}
-		return dev, err
-	}
-	cs, err := gpio.Output(customCS, true)
-	if err != nil {
+
+	// Ensure exclusive access if using default chip-select.
+	err = unix.Flock(fd, unix.LOCK_EX|unix.LOCK_NB)
+	switch err {
+	case nil:
+		dev = &Device{fd: fd, speed: speed}
+	case unix.EWOULDBLOCK:
 		_ = unix.Close(fd)
-		err = fmt.Errorf("GPIO %d for chip select: %v", customCS, err)
-	} else {
-		dev = &Device{fd: fd, speed: speed, cs: cs}
+		err = fmt.Errorf("%s: device is in use", spiDevice)
+	default:
+		_ = unix.Close(fd)
+		err = fmt.Errorf("%s: %v", spiDevice, err)
 	}
 	return dev, err
 }
@@ -99,7 +89,7 @@ func (dev *Device) Transfer(buf []byte) error {
 		rx_buf:        bufAddr,
 		len:           uint32(len(buf)),
 		speed_hz:      uint32(dev.speed),
-		delay_usecs:   1,
+		delay_usecs:   0,
 		bits_per_word: 8,
 	}
 	return dev.syscall(spi_IOC_MESSAGE(1), (*int)(unsafe.Pointer(&tr)))
