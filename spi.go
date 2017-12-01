@@ -11,7 +11,6 @@ import (
 type Device struct {
 	fd    int
 	speed int
-	cs    gpio.OutputPin
 }
 
 // Open opens the given SPI device at the specified speed (in Hertz)
@@ -45,10 +44,6 @@ func (dev *Device) Close() error {
 
 // Write writes len(buf) bytes from buf to dev.
 func (dev *Device) Write(buf []byte) error {
-	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
-	}
 	n, err := unix.Write(dev.fd, buf)
 	if err != nil {
 		return err
@@ -62,10 +57,6 @@ func (dev *Device) Write(buf []byte) error {
 // Read reads from dev into buf, blocking if necessary
 // until exactly len(buf) bytes have been read.
 func (dev *Device) Read(buf []byte) error {
-	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
-	}
 	for off := 0; off < len(buf); {
 		n, err := unix.Read(dev.fd, buf[off:])
 		if err != nil {
@@ -79,10 +70,6 @@ func (dev *Device) Read(buf []byte) error {
 // Transfer uses buf for an SPI transfer operation (send and receive).
 // The received data overwrites buf.
 func (dev *Device) Transfer(buf []byte) error {
-	if dev.cs != nil {
-		_ = dev.cs.Write(true)
-		defer func() { _ = dev.cs.Write(false) }()
-	}
 	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
 	tr := spi_ioc_transfer{
 		tx_buf:        bufAddr,
