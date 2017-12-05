@@ -69,12 +69,11 @@ func (dev *Device) Read(buf []byte) error {
 
 // Transfer uses buf for an SPI transfer operation (send and receive).
 // The received data overwrites buf.
-func (dev *Device) Transfer(buf []byte) error {
-	bufAddr := uint64(uintptr(unsafe.Pointer(&buf[0])))
+func (dev *Device) Transfer(tx, rx []byte) error {
 	tr := spi_ioc_transfer{
-		tx_buf:        bufAddr,
-		rx_buf:        bufAddr,
-		len:           uint32(len(buf)),
+		tx_buf:        uint64(uintptr(unsafe.Pointer(&tx[0]))),
+		rx_buf:        uint64(uintptr(unsafe.Pointer(&rx[0]))),
+		len:           uint32(len(tx)),
 		speed_hz:      uint32(dev.speed),
 		delay_usecs:   0,
 		bits_per_word: 8,
