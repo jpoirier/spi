@@ -82,14 +82,15 @@ func (dev *Device) Transfer(tx, rx []byte) error {
 }
 
 // Mode returns the mode of the SPI device.
-func (dev *Device) Mode() (uint8, error) {
+func (dev *Device) Mode() (int, error) {
 	var mode uint8
 	err := dev.syscallU8(spi_IOC_RD_MODE, &mode)
-	return mode, err
+	return int(mode), err
 }
 
 // SetMode sets the mode of the SPI device.
-func (dev *Device) SetMode(mode uint8) error {
+func (dev *Device) SetMode(m int) error {
+	mode := uint8(n)
 	return dev.syscallU8(spi_IOC_WR_MODE, &mode)
 }
 
