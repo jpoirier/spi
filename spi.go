@@ -90,7 +90,7 @@ func (dev *Device) Mode() (int, error) {
 
 // SetMode sets the mode of the SPI device.
 func (dev *Device) SetMode(m int) error {
-	mode := uint8(n)
+	mode := uint8(m)
 	return dev.syscallU8(spi_IOC_WR_MODE, &mode)
 }
 
